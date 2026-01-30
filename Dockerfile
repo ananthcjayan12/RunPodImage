@@ -33,8 +33,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Install Python dependencies for log server
-RUN pip install --no-cache-dir \
-    flask>=2.0.0
+RUN pip install --no-cache-dir --ignore-installed flask>=2.0.0
 
 # Create workspace directory if not exists
 RUN mkdir -p /workspace
