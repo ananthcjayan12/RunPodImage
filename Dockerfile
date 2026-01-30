@@ -35,8 +35,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install Python dependencies for log server
 RUN pip install --no-cache-dir --ignore-installed flask>=2.0.0
 
-# Create workspace directory if not exists
-RUN mkdir -p /workspace
+# Create workspace directory and setup ComfyUI
+RUN mkdir -p /workspace && cd /workspace && \
+    git clone https://github.com/comfyanonymous/ComfyUI.git runpod-slim/ComfyUI && \
+    cd runpod-slim/ComfyUI && \
+    pip install --no-cache-dir -r requirements.txt
 
 # Set working directory
 WORKDIR /workspace

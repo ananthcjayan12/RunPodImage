@@ -1,5 +1,14 @@
 # Troubleshooting Guide
 
+## Issue: "ComfyUI directory not found"
+
+### Root Cause
+The base image `runpod/comfyui:latest` might not have ComfyUI pre-installed in the expected path `/workspace/runpod-slim/ComfyUI`.
+
+### Solution Applied
+- Added a `git clone` and `pip install` step in the `Dockerfile` to ensure ComfyUI is present.
+- Added a fallback check in `entrypoint.sh` to clone ComfyUI at runtime if it's still missing.
+
 ## Issue: "exec /workspace/entrypoint.sh failed: No such file or directory"
 
 ### Root Cause

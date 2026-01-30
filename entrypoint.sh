@@ -12,6 +12,15 @@ LOG_FILE="${LOG_FILE_PATH:-/tmp/comfyui.log}"
 COMFY_PATH="/workspace/runpod-slim/ComfyUI"
 LOG_SERVER_PORT="${LOG_SERVER_PORT:-8001}"
 
+# Ensure ComfyUI path exists before proceeding
+if [ ! -d "$COMFY_PATH" ]; then
+    echo "--- [SYSTEM] ComfyUI missing, cloning to $COMFY_PATH ---" | tee -a "$LOG_FILE"
+    mkdir -p "$(dirname "$COMFY_PATH")"
+    git clone https://github.com/comfyanonymous/ComfyUI.git "$COMFY_PATH"
+    cd "$COMFY_PATH"
+    pip install --no-cache-dir -r requirements.txt
+fi
+
 # Initialize log file
 # We use 'tee' to both write to the log file and show in stdout for container logs
 echo "--- [SYSTEM] Container Started at $(date -Iseconds) ---" | tee "$LOG_FILE"
