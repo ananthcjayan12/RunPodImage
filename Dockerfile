@@ -6,7 +6,7 @@
 # =============================================================================
 
 # Use latest tag for flexibility as requested (pin to SHA for strict reproducibility)
-FROM runpod/comfyui:latest AS base
+FROM runpod/comfyui:latest
 
 # Metadata
 LABEL org.opencontainers.image.title="ComfyUI Modular"
@@ -49,11 +49,12 @@ COPY setup_parallel.sh /workspace/setup_parallel.sh
 COPY log_server.py /workspace/log_server.py
 COPY entrypoint.sh /workspace/entrypoint.sh
 
-# Set permissions
+# Set permissions and verify files exist
 RUN chmod +x /workspace/setup_wan.sh \
     && chmod +x /workspace/setup_parallel.sh \
     && chmod +x /workspace/entrypoint.sh \
-    && chmod +x /workspace/log_server.py
+    && chmod +x /workspace/log_server.py \
+    && ls -la /workspace/entrypoint.sh
 
 # Create log file directory and set initial permissions
 RUN mkdir -p /tmp && touch /tmp/comfyui.log && chmod 666 /tmp/comfyui.log
