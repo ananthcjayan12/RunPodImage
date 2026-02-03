@@ -28,7 +28,7 @@ echo "--- [SYSTEM] Features Enabled: ${ENABLE_FEATURES:-none} ---" | tee -a "$LO
 
 # Start the Live Log Server in the background
 echo "--- [SYSTEM] Starting Log Server on port $LOG_SERVER_PORT ---" | tee -a "$LOG_FILE"
-python3 /workspace/log_server.py > /tmp/log_server_status.log 2>&1 &
+python3 /app/log_server.py > /tmp/log_server_status.log 2>&1 &
 LOG_SERVER_PID=$!
 echo "--- [SYSTEM] Log Server PID: $LOG_SERVER_PID ---" | tee -a "$LOG_FILE"
 
@@ -42,7 +42,7 @@ FEATURES_LOWER=$(echo "$ENABLE_FEATURES" | tr '[:upper:]' '[:lower:]')
 if [[ "$FEATURES_LOWER" == *"wan2.1"* ]]; then
     echo "--- [PROCESS] Starting Wan 2.1 Setup ---" | tee -a "$LOG_FILE"
     # Execute setup_parallel.sh and append output to log file
-    bash /workspace/setup_parallel.sh >> "$LOG_FILE" 2>&1 || {
+    bash /app/setup_parallel.sh >> "$LOG_FILE" 2>&1 || {
         echo "--- [ERROR] Wan 2.1 setup failed ---" | tee -a "$LOG_FILE"
     }
     echo "--- [PROCESS] Wan 2.1 Setup Complete ---" | tee -a "$LOG_FILE"
@@ -51,7 +51,7 @@ fi
 if [[ "$FEATURES_LOWER" == *"wan2.2"* ]]; then
     echo "--- [PROCESS] Starting Wan 2.2 Setup ---" | tee -a "$LOG_FILE"
     # Execute setup_wan.sh and append output to log file
-    bash /workspace/setup_wan.sh >> "$LOG_FILE" 2>&1 || {
+    bash /app/setup_wan.sh >> "$LOG_FILE" 2>&1 || {
         echo "--- [ERROR] Wan 2.2 setup failed ---" | tee -a "$LOG_FILE"
     }
     echo "--- [PROCESS] Wan 2.2 Setup Complete ---" | tee -a "$LOG_FILE"

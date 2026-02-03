@@ -15,11 +15,12 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI.git runpod-slim/ComfyUI 
     pip install --no-cache-dir flask>=2.0.0
 
 # 3. Application Assets (These change often, so they go at the bottom)
-# This way, editing a script only takes 2 seconds to rebuild.
+# Moved to /app to avoid being shadowed by RunPod's /workspace volume mount
+WORKDIR /app
 COPY setup_wan.sh setup_parallel.sh log_server.py entrypoint.sh ./
 
 RUN chmod +x *.sh && sed -i 's/\r$//' *.sh
 RUN touch /tmp/comfyui.log && chmod 666 /tmp/comfyui.log
 
 EXPOSE 8188 8001
-ENTRYPOINT ["/bin/bash", "/workspace/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/app/entrypoint.sh"]

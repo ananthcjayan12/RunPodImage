@@ -32,13 +32,14 @@ echo "--- [SYSTEM] Features Enabled: $ENABLE_FEATURES ---" >> /tmp/comfyui.log
 # 2. Conditional Feature Execution
 if [[ $ENABLE_FEATURES == *"wan2.1"* ]]; then
     echo "--- [PROCESS] Starting Wan 2.1 Setup ---" >> /tmp/comfyui.log
-    bash /workspace/setup_parallel.sh >> /tmp/comfyui.log 2>&1
+    bash /app/setup_parallel.sh >> /tmp/comfyui.log 2>&1
 fi
 
 if [[ $ENABLE_FEATURES == *"wan2.2"* ]]; then
     echo "--- [PROCESS] Starting Wan 2.2 Setup ---" >> /tmp/comfyui.log
-    bash /workspace/setup_wan.sh >> /tmp/comfyui.log 2>&1
+    bash /app/setup_wan.sh >> /tmp/comfyui.log 2>&1
 fi
+
 
 # 3. Start ComfyUI (Only once, after all downloads finish)
 echo "--- [SYSTEM] Starting ComfyUI ---" >> /tmp/comfyui.log
