@@ -157,17 +157,20 @@ def stream() -> Response:
         try:
             ensure_log_file_exists()
             with open(LOG_FILE, 'r') as f:
-                # First, send all existing content
+                # First, send all existing content line by line
                 existing_content = f.read()
                 if existing_content:
-                    yield f"data: {existing_content}\n\n"
+                    # Send each line separately for proper SSE format
+                    for line in existing_content.splitlines(keepends=True):
+                        yield f"data: {line}"
+                    yield "\n"  # End of initial batch
                 
                 # Now tail the file for new content
                 idle_count = 0
                 while True:
                     line = f.readline()
                     if line:
-                        yield f"data: {line}\n\n"
+                        yield f"data: {line}\n"
                         idle_count = 0
                     else:
                         time.sleep(0.5)

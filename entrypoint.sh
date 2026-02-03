@@ -5,7 +5,7 @@
 # Handles feature-based initialization and service startup
 # =============================================================================
 
-set -e  # Exit on error
+# Don't use 'set -e' as it's too strict and causes container restarts on minor errors
 
 # Configuration
 LOG_FILE="${LOG_FILE_PATH:-/tmp/comfyui.log}"
