@@ -1,75 +1,64 @@
 # =============================================================================
-# Modular ComfyUI Docker Image
+# Modular ComfyUI - Slim Stable Base
 # =============================================================================
-# Base: runpod/comfyui with selective feature installation
-# Features: Wan 2.1, Wan 2.2, Real-time log streaming
+# Base: NVIDIA CUDA 12.1 (Industry Standard Stability)
 # =============================================================================
 
-# Use latest tag for flexibility as requested (pin to SHA for strict reproducibility)
-FROM runpod/comfyui:latest
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
 
-# Metadata
-LABEL org.opencontainers.image.title="ComfyUI Modular"
-LABEL org.opencontainers.image.description="Modular ComfyUI with selective feature installation"
-LABEL org.opencontainers.image.source="https://github.com/OWNER/REPO"
-LABEL org.opencontainers.image.licenses="MIT"
-
-# Environment variables
-ENV PYTHONUNBUFFERED=1 \
+# Set non-interactive to avoid prompts during build
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PIP_NO_CACHE_DIR=1 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    ENABLE_FEATURES="" \
-    LOG_FILE_PATH="/tmp/comfyui.log" \
-    LOG_SERVER_PORT="8001"
+    ENABLE_FEATURES=""
 
-# Install system dependencies
-# aria2 is required for high-speed downloads in setup scripts
+# 1. Install System Essentials
+# Added: ffmpeg (required for video models like Wan) and libgl1 (for OpenCV)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    aria2 \
+    python3-pip \
+    python3-dev \
+    git \
     curl \
+    aria2 \
+    ffmpeg \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
     procps \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies for log server
+# Ensure python points to python3
+RUN ln -s /usr/bin/python3 /usr/bin/python
+
+# 2. Install Python Core Dependencies
+# We install Torch first to ensure it matches the CUDA version exactly
+RUN pip install --upgrade pip && \
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+# 3. Setup ComfyUI
+WORKDIR /workspace
+RUN git clone https://github.com/comfyanonymous/ComfyUI.git runpod-slim/ComfyUI && \
+    cd runpod-slim/ComfyUI && \
+    pip install -r requirements.txt
+
+# 4. Install Log Server Dependencies
 RUN pip install --no-cache-dir --ignore-installed flask>=2.0.0
 
-# Create workspace directory and setup ComfyUI
-RUN mkdir -p /workspace && cd /workspace && \
-    git clone https://github.com/comfyanonymous/ComfyUI.git runpod-slim/ComfyUI && \
-    cd runpod-slim/ComfyUI && \
-    pip install --no-cache-dir -r requirements.txt
+# 5. Application Assets
+COPY setup_wan.sh setup_parallel.sh log_server.py entrypoint.sh /workspace/
 
-# Set working directory
-WORKDIR /workspace
+# Standardize permissions and line endings (Crucial for execution stability)
+RUN chmod +x /workspace/*.sh /workspace/*.py && \
+    sed -i 's/\r$//' /workspace/*.sh
 
-# Copy setup scripts (pre-tested, do not modify)
-COPY setup_wan.sh /workspace/setup_wan.sh
-COPY setup_parallel.sh /workspace/setup_parallel.sh
+# Initial log setup
+RUN touch /tmp/comfyui.log && chmod 666 /tmp/comfyui.log
 
-# Copy application files
-COPY log_server.py /workspace/log_server.py
-COPY entrypoint.sh /workspace/entrypoint.sh
-
-# Set permissions and verify files exist
-RUN chmod +x /workspace/setup_wan.sh \
-    && chmod +x /workspace/setup_parallel.sh \
-    && chmod +x /workspace/entrypoint.sh \
-    && chmod +x /workspace/log_server.py \
-    && ls -la /workspace/entrypoint.sh
-
-# Create log file directory and set initial permissions
-RUN mkdir -p /tmp && touch /tmp/comfyui.log && chmod 666 /tmp/comfyui.log
-
-# Expose ports
-# 8188: ComfyUI web interface
-# 8001: Log streaming server
+# Ports
 EXPOSE 8188 8001
 
-# Health check (checks log server health)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
     CMD curl -f http://localhost:8001/health || exit 1
 
-# Entrypoint
 ENTRYPOINT ["/workspace/entrypoint.sh"]
