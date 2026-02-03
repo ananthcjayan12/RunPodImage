@@ -104,31 +104,29 @@ HTML_TEMPLATE = """
         const logContainer = document.getElementById('log-container');
         const statusText = document.getElementById('status-text');
         
-        async function streamLogs() {
-            try {
-                const response = await fetch('/stream');
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const reader = response.body.getReader();
-                const decoder = new TextDecoder();
-
-                while (true) {
-                    const { value, done } = await reader.read();
-                    if (done) break;
-                    
-                    const text = decoder.decode(value, { stream: true });
-                    logContainer.innerText += text;
-                    logContainer.scrollTop = logContainer.scrollHeight;
-                }
-            } catch (error) {
-                console.error('Streaming error:', error);
-                statusText.innerText = 'Connection Lost';
+        function connectToStream() {
+            const evtSource = new EventSource('/stream');
+            
+            evtSource.onmessage = function(event) {
+                logContainer.innerText += event.data;
+                logContainer.scrollTop = logContainer.scrollHeight;
+            };
+            
+            evtSource.onerror = function(err) {
+                console.error('EventSource failed:', err);
+                statusText.innerText = 'Connection Lost - Reconnecting...';
                 statusText.style.color = '#f87171';
-                setTimeout(streamLogs, 5000); // Retry after 5 seconds
-            }
+                evtSource.close();
+                setTimeout(connectToStream, 3000); // Retry after 3 seconds
+            };
+            
+            evtSource.onopen = function() {
+                statusText.innerText = 'Streaming Live';
+                statusText.style.color = '#4ade80';
+            };
         }
 
-        streamLogs();
+        connectToStream();
     </script>
 </body>
 </html>
@@ -154,28 +152,39 @@ def index() -> str:
 
 @app.route('/stream')
 def stream() -> Response:
-    """Stream log file content in real-time."""
+    """Stream log file content in real-time using Server-Sent Events."""
     def generate() -> Generator[str, None, None]:
         try:
             ensure_log_file_exists()
             with open(LOG_FILE, 'r') as f:
-                # Seek to end of file if it's large, but here we likely want full logs for a new container
-                # For large logs, we could seek to end-10KB: f.seek(0, 2); f.seek(max(0, f.tell()-10240), 0)
+                # First, send all existing content
+                existing_content = f.read()
+                if existing_content:
+                    yield f"data: {existing_content}\n\n"
+                
+                # Now tail the file for new content
+                idle_count = 0
                 while True:
                     line = f.readline()
-                    if not line:
+                    if line:
+                        yield f"data: {line}\n\n"
+                        idle_count = 0
+                    else:
                         time.sleep(0.5)
-                        continue
-                    yield line
+                        idle_count += 1
+                        # Send a heartbeat every 10 seconds to keep connection alive
+                        if idle_count >= 20:
+                            yield ": heartbeat\n\n"
+                            idle_count = 0
         except GeneratorExit:
             logger.info("Client disconnected from stream")
         except Exception as e:
             logger.error(f"Stream error: {e}")
-            yield f"\n--- [ERROR] Stream error: {e} ---\n"
+            yield f"data: --- [ERROR] Stream error: {e} ---\n\n"
     
     return Response(
         generate(),
-        mimetype='text/plain',
+        mimetype='text/event-stream',
         headers={
             'Cache-Control': 'no-cache',
             'X-Accel-Buffering': 'no',

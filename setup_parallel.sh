@@ -79,13 +79,4 @@ parallel_download "$COMFY_PATH/models/loras/WanVideo/Lightx2v/lightx2v_I2V_14B_4
 echo "⏳ Waiting for all background downloads to finish..."
 wait
 echo "✅ All downloads finished."
-
-echo "--- 4. Restarting ComfyUI ---"
-pkill -f main.py || true
-cd "$COMFY_PATH" 
-# Small sleep to ensure port is freed
-sleep 2
-nohup python3 main.py --listen 0.0.0.0 --port 8188 > /tmp/comfyui.log 2>&1 &
-sleep 3
-echo "✅ ComfyUI restarted. PID: $(pgrep -f 'python3 main.py' | head -1)"
 echo "--- Setup Complete ---"
