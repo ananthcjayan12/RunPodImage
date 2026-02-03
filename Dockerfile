@@ -1,64 +1,25 @@
-# =============================================================================
-# Modular ComfyUI - Slim Stable Base
-# =============================================================================
-# Base: NVIDIA CUDA 12.1 (Industry Standard Stability)
-# =============================================================================
+# Use a base that ALREADY has Torch and CUDA. This saves ~15 minutes of build time.
+FROM pytorch/pytorch:2.2.1-cuda12.1-cudnn8-devel
 
-FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
-
-# Set non-interactive to avoid prompts during build
-ENV DEBIAN_FRONTEND=noninteractive \
-    PYTHONUNBUFFERED=1 \
-    PYTHONDONTWRITEBYTECODE=1 \
-    PIP_NO_CACHE_DIR=1 \
-    ENABLE_FEATURES=""
-
-# 1. Install System Essentials
-# Added: ffmpeg (required for video models like Wan) and libgl1 (for OpenCV)
+# 1. System dependencies (Ordered by least likely to change)
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-pip \
-    python3-dev \
-    git \
-    curl \
-    aria2 \
-    ffmpeg \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    procps \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    aria2 git curl ffmpeg libgl1 procps \
+    && apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Ensure python points to python3
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
-# 2. Install Python Core Dependencies
-# We install Torch first to ensure it matches the CUDA version exactly
-RUN pip install --upgrade pip && \
-    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
-
-# 3. Setup ComfyUI
 WORKDIR /workspace
+
+# 2. Install ComfyUI dependencies (Cached unless requirements.txt changes)
+# We clone and install BEFORE copying your custom scripts to keep this layer cached.
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git runpod-slim/ComfyUI && \
-    cd runpod-slim/ComfyUI && \
-    pip install -r requirements.txt
+    pip install --no-cache-dir -r runpod-slim/ComfyUI/requirements.txt && \
+    pip install --no-cache-dir flask>=2.0.0
 
-# 4. Install Log Server Dependencies
-RUN pip install --no-cache-dir --ignore-installed flask>=2.0.0
+# 3. Application Assets (These change often, so they go at the bottom)
+# This way, editing a script only takes 2 seconds to rebuild.
+COPY setup_wan.sh setup_parallel.sh log_server.py entrypoint.sh ./
 
-# 5. Application Assets
-COPY setup_wan.sh setup_parallel.sh log_server.py entrypoint.sh /workspace/
-
-# Standardize permissions and line endings (Crucial for execution stability)
-RUN chmod +x /workspace/*.sh /workspace/*.py && \
-    sed -i 's/\r$//' /workspace/*.sh
-
-# Initial log setup
+RUN chmod +x *.sh && sed -i 's/\r$//' *.sh
 RUN touch /tmp/comfyui.log && chmod 666 /tmp/comfyui.log
 
-# Ports
 EXPOSE 8188 8001
-
-HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
-    CMD curl -f http://localhost:8001/health || exit 1
-
-ENTRYPOINT ["/workspace/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/workspace/entrypoint.sh"]
