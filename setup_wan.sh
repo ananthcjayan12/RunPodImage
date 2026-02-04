@@ -77,6 +77,7 @@ parallel_download "$MODELS_PATH/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noi
 "https://huggingface.co/Comfy-Org/Wan_2.2_ComfyUI_Repackaged/resolve/main/split_files/loras/wan2.2_i2v_lightx2v_4steps_lora_v1_low_noise.safetensors" \
 1195376640 &
 
+echo "--- 3. Waiting for Downloads ---"
 echo "⏳ Waiting for all background downloads to finish..."
 wait
 echo "✅ All downloads finished."

@@ -1,5 +1,5 @@
-# Use PyTorch 2.5.1 with CUDA 12.1 for ComfyUI compatibility
-FROM pytorch/pytorch:2.5.1-cuda12.1-cudnn9-runtime
+# Use PyTorch 2.6+ to fix CVE-2025-32434 (critical torch.load vulnerability)
+FROM pytorch/pytorch:2.6.0-cuda12.4-cudnn9-runtime
 
 # 1. System dependencies (Ordered by least likely to change)
 ENV PIP_ROOT_USER_ACTION=ignore
@@ -14,7 +14,7 @@ WORKDIR /workspace
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git runpod-slim/ComfyUI && \
     pip install --no-cache-dir "numpy<2" && \
     pip install --no-cache-dir -r runpod-slim/ComfyUI/requirements.txt && \
-    pip install --no-cache-dir torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 && \
+    pip install --no-cache-dir torchvision torchaudio --index-url https://download.pytorch.org/whl/cu124 && \
     pip install --no-cache-dir flask>=2.0.0
 
 # 3. Application Assets (These change often, so they go at the bottom)
