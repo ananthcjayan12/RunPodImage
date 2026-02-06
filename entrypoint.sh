@@ -69,7 +69,8 @@ echo "--- [SYSTEM] Starting ComfyUI ---" | tee -a "$LOG_FILE"
 if [ -d "$COMFY_PATH" ]; then
     cd "$COMFY_PATH"
     # Use 'exec' so python becomes PID 1 and receives signals correctly
-    exec python3 main.py --listen 0.0.0.0 --port 8188 >> "$LOG_FILE" 2>&1
+    # --enable-cors-header allows browser uploads from different origins
+    exec python3 main.py --listen 0.0.0.0 --port 8188 --enable-cors-header >> "$LOG_FILE" 2>&1
 else
     echo "--- [ERROR] ComfyUI directory not found at $COMFY_PATH ---" | tee -a "$LOG_FILE"
     exit 1
