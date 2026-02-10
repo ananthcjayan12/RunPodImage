@@ -46,6 +46,7 @@ cd "$NODES_PATH"
 [ ! -d "ComfyUI-KJNodes" ] && git clone https://github.com/Kijai/ComfyUI-KJNodes.git
 [ ! -d "ComfyUI-VideoHelperSuite" ] && git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git
 [ ! -d "ComfyUI-MelBandRoFormer" ] && git clone https://github.com/Kijai/ComfyUI-MelBandRoFormer.git
+[ ! -d "ComfyUI-TeaCache" ] && git clone https://github.com/1038lab/ComfyUI-TeaCache.git
 
 # Install requirements silently
 pip install -r ComfyUI-WanVideoWrapper/requirements.txt > /dev/null 2>&1
