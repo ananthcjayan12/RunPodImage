@@ -9,6 +9,7 @@ on:
       - main
       - master
       - v2
+      - v3
     tags:
       - 'v*'
   pull_request:
